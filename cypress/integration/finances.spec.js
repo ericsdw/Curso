@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+import { format, prepareLocalStorage } from '../support/utils'
+
 context('Dev Finances Agilizei', () => {
         // hooks
         // trecho que executam antes e depois do teste
@@ -9,11 +11,19 @@ context('Dev Finances Agilizei', () => {
         // afterEach -> depois de cada teste
 
         beforeEach(() => {
-            cy.visit('https://devfinance-agilizei.netlify.app')
-            cy.get('#data-table tbody tr').should('have.length', 0)
+            cy.visit('https://devfinance-agilizei.netlify.app', {
+                onBeforeLoad: (win) => {
+                    prepareLocalStorage(win)
+                }
+            })
+
+
+
+
+            //cy.get('#data-table tbody tr').should('have.length', 2) comentado por conta do teste com local storage
             
         });
-        it.only.only('Cadastrar entradas', () => {
+        it('Cadastrar entradas', () => {
        
         
 
@@ -23,7 +33,7 @@ context('Dev Finances Agilizei', () => {
         cy.get('[type=date]').type('2021-03-17')  // atributos
         cy.get('button').contains('Salvar').click() // tipo e valor
 
-        cy.get('#data-table tbody tr').should('have.length', 1)
+        cy.get('#data-table tbody tr').should('have.length', 3)
         
 
     });
@@ -36,25 +46,25 @@ context('Dev Finances Agilizei', () => {
         cy.get('[type=date]').type('2021-03-17')  // atributos
         cy.get('button').contains('Salvar').click() // tipo e valor
 
-        cy.get('#data-table tbody tr').should('have.length', 1)
+        cy.get('#data-table tbody tr').should('have.length', 3)
         
     });
 
-    it.only('Remover entradas e saídas', () => {
+    it('Remover entradas e saídas', () => {
         const entrada   = 'Mesada'
-        const saída     = 'KinderOvo'
+        const saída     = 'Suco Kapo'
 
-        cy.get('#transaction .button').click() // id + classe
-        cy.get('#description').type(entrada)  // id
-        cy.get('[name=amount').type(100)  // atributos
-        cy.get('[type=date]').type('2021-03-17')  // atributos
-        cy.get('button').contains('Salvar').click() // tipo e valor
+        //cy.get('#transaction .button').click() // id + classe
+        //cy.get('#description').type(entrada)  // id
+        //cy.get('[name=amount').type(100)  // atributos
+        //cy.get('[type=date]').type('2021-03-17')  // atributos
+        //cy.get('button').contains('Salvar').click() // tipo e valor
 
-        cy.get('#transaction .button').click() // id + classe
-        cy.get('#description').type(saída)  // id
-        cy.get('[name=amount').type(-35)  // atributos
-        cy.get('[type=date]').type('2021-03-17')  // atributos
-        cy.get('button').contains('Salvar').click() // tipo e valor
+        //cy.get('#transaction .button').click() // id + classe
+        //cy.get('#description').type(saída)  // id
+        //cy.get('[name=amount').type(-35)  // atributos
+        //cy.get('[type=date]').type('2021-03-17')  // atributos
+        //cy.get('button').contains('Salvar').click() // tipo e valor
         
         // estrategia 1 : voltar para o elemento pai, e avançar para um td img attr
         
@@ -73,6 +83,50 @@ context('Dev Finances Agilizei', () => {
           .click()
 
           cy.get('#data-table tbody tr').should('have.length', 0)
+
+    });
+
+    it('Validar saldo com diversas transações', () => {
+        
+        // capturar as linhas com as transações e as colunas com valores
+        // capturar o texto dessas colunas
+        // formatar esses valores da coluna valor
+
+        //somar os valores de entradas e saidas
+
+        // capturar o texto do total
+        // comparar o somatorio de entradas e despesas com o total
+        
+        let incomes = 0
+        let expenses = 0
+
+        cy.get('#data-table tbody tr')
+          .each(($el, index, $list) => {
+
+              cy.get($el).find('td.income, td.expense').invoke('text').then(text =>{
+                  if(text.includes('-')){
+                      expenses = expenses + format(text)
+                  } else{
+                      incomes = incomes + format(text)
+                  } 
+
+                  cy.log(`entradas`, incomes)
+                  cy.log(`saidas`, expenses)
+
+                })
+
+          })
+
+      cy.get('#totalDisplay').invoke('text').then(text=>{
+          
+          let formattedTotalDisplay = format(text)
+          let expectedTotal = incomes + expenses
+
+          expect(formattedTotalDisplay).to.eq(expectedTotal)
+
+      })
+          
+          
 
     });
     
